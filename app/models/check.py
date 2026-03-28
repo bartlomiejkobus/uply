@@ -18,6 +18,8 @@ class CheckStatus(str, enum.Enum):
 
 
 class Check(Base):
+    """Single availability check result for a monitor (HTTP or ping)."""
+
     __tablename__ = "checks"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

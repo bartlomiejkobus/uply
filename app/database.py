@@ -12,5 +12,6 @@ class Base(DeclarativeBase):
 
 
 async def get_db():
+    """FastAPI dependency that yields a database session."""
     async with async_session_maker() as session:
         yield session
