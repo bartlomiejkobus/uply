@@ -30,3 +30,21 @@ class UptimeChartResponse(BaseModel):
     period: str
     bucket: str
     buckets: list[UptimeBucket]
+
+
+class DashboardMonitor(BaseModel):
+    id: int
+    url: str
+    is_active: bool
+    current_status: str | None
+    uptime_24h: float | None
+    http_avg_response_time_ms: float | None
+    ping_avg_response_time_ms: float | None
+    last_checked_at: datetime | None
+
+
+class DashboardSummaryResponse(BaseModel):
+    total_monitors: int
+    monitors_up: int
+    monitors_down: int
+    monitors: list[DashboardMonitor]
