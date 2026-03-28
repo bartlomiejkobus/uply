@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.monitor import Monitor
 from app.schemas.monitor import MonitorCreate, MonitorResponse
+from app.services.monitor_engine import monitor_engine
 
 router = APIRouter(prefix="/api/monitors", tags=["monitors"])
 
@@ -35,6 +36,7 @@ async def create_monitor(data: MonitorCreate, db: AsyncSession = Depends(get_db)
         await db.rollback()
         raise HTTPException(status_code=409, detail="Monitor with this URL already exists")
     await db.refresh(monitor)
+    monitor_engine.add_monitor(monitor.id)
     return monitor
 
 
@@ -44,5 +46,6 @@ async def delete_monitor(monitor_id: int, db: AsyncSession = Depends(get_db)):
     monitor = await db.get(Monitor, monitor_id)
     if not monitor:
         raise HTTPException(status_code=404, detail="Monitor not found")
+    monitor_engine.remove_monitor(monitor_id)
     await db.delete(monitor)
     await db.commit()
