@@ -5,7 +5,7 @@ from fastapi import FastAPI
 
 from app.database import engine, Base
 from app.models import Monitor, Check  # noqa: F401
-from app.routers import monitors
+from app.routers import monitors, checks
 from app.services.monitor_engine import monitor_engine
 
 logging.basicConfig(level=logging.INFO)
@@ -31,6 +31,7 @@ app = FastAPI(
 
 
 app.include_router(monitors.router)
+app.include_router(checks.router)
 
 
 @app.get("/")

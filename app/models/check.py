@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime, timezone
 
-from sqlalchemy import String, Float, Integer, DateTime, ForeignKey, Enum
+from sqlalchemy import String, Float, Integer, DateTime, ForeignKey, Enum, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -21,6 +21,9 @@ class Check(Base):
     """Single availability check result for a monitor (HTTP or ping)."""
 
     __tablename__ = "checks"
+    __table_args__ = (
+        Index("ix_checks_monitor_checked_at", "monitor_id", "checked_at"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     monitor_id: Mapped[int] = mapped_column(
