@@ -1,17 +1,17 @@
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
 
 import httpx
 from apscheduler.jobstores.base import JobLookupError
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from app.config import settings
 from app.database import async_session_maker
+from app.models.check import Check, CheckType
 from app.models.monitor import Monitor
-from app.models.check import CheckType
 from app.services.http_checker import check_http
 from app.services.ping_checker import check_ping
 
@@ -35,6 +35,14 @@ class MonitorEngine:
             self._add_job(monitor.id)
             logger.info(f"Loaded monitor: {monitor.url} (id={monitor.id})")
 
+        self.scheduler.add_job(
+            self._cleanup_old_checks,
+            "interval",
+            hours=24,
+            id="cleanup_old_checks",
+            replace_existing=True,
+        )
+
         self.scheduler.start()
         logger.info(f"Scheduler started, {len(monitors)} active monitors")
 
@@ -54,8 +62,9 @@ class MonitorEngine:
 
     def remove_monitor(self, monitor_id: int):
         try:
-            self.scheduler.remove_job(self._job_id(monitor_id))
-            logger.info(f"Removed job: {self._job_id(monitor_id)}")
+            job_id = self._job_id(monitor_id)
+            self.scheduler.remove_job(job_id)
+            logger.info(f"Removed job: {job_id}")
         except JobLookupError:
             pass
 
@@ -74,12 +83,13 @@ class MonitorEngine:
         async with async_session_maker() as db:
             monitor = await db.get(Monitor, monitor_id)
             if not monitor:
-                logger.warning(f"Monitor {monitor_id} not found, skipping")
+                logger.warning(f"Monitor {monitor_id} not found, removing job")
+                self.remove_monitor(monitor_id)
                 return
 
             timeout = settings.DEFAULT_TIMEOUT_SECONDS
             hostname = urlparse(monitor.url).hostname
-            now = datetime.now(timezone.utc)
+            now = datetime.now(timezone.utc).replace(tzinfo=None)
 
             http_result, ping_result = await asyncio.gather(
                 check_http(monitor.url, timeout, self.http_client),
@@ -96,6 +106,24 @@ class MonitorEngine:
                 f"HTTP={http_result.status.value}{http_time} "
                 f"Ping={ping_result.status.value}"
             )
+
+
+    async def _cleanup_old_checks(self):
+        """Delete checks older than DATA_RETENTION_DAYS."""
+        cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(
+            days=settings.DATA_RETENTION_DAYS
+        )
+        async with async_session_maker() as db:
+            result = await db.execute(
+                delete(Check).where(Check.checked_at < cutoff)
+            )
+            await db.commit()
+            deleted = result.rowcount
+            if deleted > 0:
+                logger.info(
+                    f"Cleanup: deleted {deleted} old checks "
+                    f"(older than {settings.DATA_RETENTION_DAYS} days)"
+                )
 
 
 monitor_engine = MonitorEngine()

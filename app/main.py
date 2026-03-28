@@ -1,14 +1,19 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 from app.database import engine, Base
 from app.models import Monitor, Check  # noqa: F401
 from app.routers import monitors, checks, stats, dashboard
 from app.services.monitor_engine import monitor_engine
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -34,6 +39,15 @@ app.include_router(monitors.router)
 app.include_router(checks.router)
 app.include_router(stats.router)
 app.include_router(dashboard.router)
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error("Unhandled exception:", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
 
 
 @app.get("/")

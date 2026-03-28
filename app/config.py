@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite+aiosqlite:///./uply.db"
     CHECK_INTERVAL_SECONDS: int = 60
     DEFAULT_TIMEOUT_SECONDS: int = 10
+    DATA_RETENTION_DAYS: int = 30
 
 
 settings = Settings()
