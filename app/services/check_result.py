@@ -11,7 +11,9 @@ class CheckResult:
     status_code: int | None
     error_message: str | None
 
-    def to_check(self, monitor_id: int, check_type: CheckType, checked_at: datetime) -> Check:
+    def to_check(
+        self, monitor_id: int, check_type: CheckType, checked_at: datetime
+    ) -> Check:
         """Convert this result into a Check ORM instance."""
         return Check(
             monitor_id=monitor_id,

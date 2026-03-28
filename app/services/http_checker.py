@@ -13,9 +13,7 @@ async def check_http(url: str, timeout: int, client: httpx.AsyncClient) -> Check
         elapsed_ms = (time.monotonic() - start) * 1000
 
         if response.status_code < 400:
-            return CheckResult(
-                CheckStatus.UP, elapsed_ms, response.status_code, None
-            )
+            return CheckResult(CheckStatus.UP, elapsed_ms, response.status_code, None)
         else:
             return CheckResult(
                 CheckStatus.DOWN,

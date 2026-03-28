@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.monitor import Monitor
 from app.schemas.monitor import MonitorCreate, MonitorResponse
+from app.services import monitor_service
+from app.services.monitor_service import get_monitor_or_404
 from app.services.monitor_engine import monitor_engine
 
 router = APIRouter(prefix="/api/monitors", tags=["monitors"])
@@ -18,8 +18,7 @@ router = APIRouter(prefix="/api/monitors", tags=["monitors"])
     description="Return all registered monitors.",
 )
 async def get_monitors(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Monitor))
-    return result.scalars().all()
+    return await monitor_service.list_monitors(db)
 
 
 @router.get(
@@ -28,10 +27,7 @@ async def get_monitors(db: AsyncSession = Depends(get_db)):
     summary="Get monitor",
     description="Return a single monitor by ID.",
 )
-async def get_monitor(monitor_id: int, db: AsyncSession = Depends(get_db)):
-    monitor = await db.get(Monitor, monitor_id)
-    if not monitor:
-        raise HTTPException(status_code=404, detail="Monitor not found")
+async def get_monitor(monitor: Monitor = Depends(get_monitor_or_404)):
     return monitor
 
 
@@ -43,14 +39,11 @@ async def get_monitor(monitor_id: int, db: AsyncSession = Depends(get_db)):
     description="Register a new URL to monitor. Returns 409 if the URL is already monitored.",
 )
 async def create_monitor(data: MonitorCreate, db: AsyncSession = Depends(get_db)):
-    monitor = Monitor(url=str(data.url))
-    db.add(monitor)
-    try:
-        await db.commit()
-    except IntegrityError:
-        await db.rollback()
-        raise HTTPException(status_code=409, detail="Monitor with this URL already exists")
-    await db.refresh(monitor)
+    monitor = await monitor_service.create_monitor(db, str(data.url))
+    if not monitor:
+        raise HTTPException(
+            status_code=409, detail="Monitor with this URL already exists"
+        )
     monitor_engine.add_monitor(monitor.id)
     return monitor
 
@@ -61,10 +54,9 @@ async def create_monitor(data: MonitorCreate, db: AsyncSession = Depends(get_db)
     summary="Delete monitor",
     description="Delete a monitor and all its check history.",
 )
-async def delete_monitor(monitor_id: int, db: AsyncSession = Depends(get_db)):
-    monitor = await db.get(Monitor, monitor_id)
-    if not monitor:
-        raise HTTPException(status_code=404, detail="Monitor not found")
-    monitor_engine.remove_monitor(monitor_id)
-    await db.delete(monitor)
-    await db.commit()
+async def delete_monitor(
+    monitor: Monitor = Depends(get_monitor_or_404),
+    db: AsyncSession = Depends(get_db),
+):
+    monitor_engine.remove_monitor(monitor.id)
+    await monitor_service.delete_monitor(db, monitor)

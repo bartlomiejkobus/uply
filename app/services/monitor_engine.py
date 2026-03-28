@@ -100,13 +100,16 @@ class MonitorEngine:
             db.add(ping_result.to_check(monitor_id, CheckType.PING, now))
             await db.commit()
 
-            http_time = f" ({http_result.response_time_ms:.0f}ms)" if http_result.response_time_ms else ""
+            http_time = (
+                f" ({http_result.response_time_ms:.0f}ms)"
+                if http_result.response_time_ms
+                else ""
+            )
             logger.info(
                 f"Check {monitor.url}: "
                 f"HTTP={http_result.status.value}{http_time} "
                 f"Ping={ping_result.status.value}"
             )
-
 
     async def _cleanup_old_checks(self):
         """Delete checks older than DATA_RETENTION_DAYS."""
@@ -114,9 +117,7 @@ class MonitorEngine:
             days=settings.DATA_RETENTION_DAYS
         )
         async with async_session_maker() as db:
-            result = await db.execute(
-                delete(Check).where(Check.checked_at < cutoff)
-            )
+            result = await db.execute(delete(Check).where(Check.checked_at < cutoff))
             await db.commit()
             deleted = result.rowcount
             if deleted > 0:
