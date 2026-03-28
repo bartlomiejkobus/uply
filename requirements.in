@@ -1,0 +1,8 @@
+uvicorn
+fastapi
+sqlalchemy
+aiosqlite
+pydantic-settings
+httpx
+ping3
+apscheduler
