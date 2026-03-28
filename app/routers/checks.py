@@ -33,14 +33,19 @@ def _combined_status(http_status: CheckStatus, ping_status: CheckStatus) -> str:
     return "down"
 
 
-@router.get("/{monitor_id}/checks", response_model=PaginatedCheckPairs)
+@router.get(
+    "/{monitor_id}/checks",
+    response_model=PaginatedCheckPairs,
+    summary="Check history",
+    description="Return paginated check history for a monitor, newest first. "
+    "Each item pairs the HTTP and ping results from the same check cycle.",
+)
 async def get_checks(
     monitor_id: int,
-    limit: int = Query(default=50, ge=1, le=200),
-    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200, description="Number of check pairs per page"),
+    offset: int = Query(default=0, ge=0, description="Number of check pairs to skip"),
     db: AsyncSession = Depends(get_db),
 ):
-    """Return paginated check history for a monitor, newest first."""
     monitor = await db.get(Monitor, monitor_id)
     if not monitor:
         raise HTTPException(status_code=404, detail="Monitor not found")

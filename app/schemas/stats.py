@@ -14,3 +14,19 @@ class MonitorStatsResponse(BaseModel):
     total_down: int
     current_status: str | None
     last_checked_at: datetime | None
+
+
+class UptimeBucket(BaseModel):
+    time_start: datetime
+    time_end: datetime
+    uptime_percentage: float
+    total_checks: int
+    total_up: int
+    total_down: int
+
+
+class UptimeChartResponse(BaseModel):
+    monitor_id: int
+    period: str
+    bucket: str
+    buckets: list[UptimeBucket]

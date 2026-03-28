@@ -11,13 +11,23 @@ from app.services.monitor_engine import monitor_engine
 router = APIRouter(prefix="/api/monitors", tags=["monitors"])
 
 
-@router.get("/", response_model=list[MonitorResponse])
+@router.get(
+    "/",
+    response_model=list[MonitorResponse],
+    summary="List monitors",
+    description="Return all registered monitors.",
+)
 async def get_monitors(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Monitor))
     return result.scalars().all()
 
 
-@router.get("/{monitor_id}", response_model=MonitorResponse)
+@router.get(
+    "/{monitor_id}",
+    response_model=MonitorResponse,
+    summary="Get monitor",
+    description="Return a single monitor by ID.",
+)
 async def get_monitor(monitor_id: int, db: AsyncSession = Depends(get_db)):
     monitor = await db.get(Monitor, monitor_id)
     if not monitor:
@@ -25,9 +35,14 @@ async def get_monitor(monitor_id: int, db: AsyncSession = Depends(get_db)):
     return monitor
 
 
-@router.post("/", response_model=MonitorResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=MonitorResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create monitor",
+    description="Register a new URL to monitor. Returns 409 if the URL is already monitored.",
+)
 async def create_monitor(data: MonitorCreate, db: AsyncSession = Depends(get_db)):
-    """Create a new monitor. Returns 409 if the URL is already monitored."""
     monitor = Monitor(url=str(data.url))
     db.add(monitor)
     try:
@@ -40,9 +55,13 @@ async def create_monitor(data: MonitorCreate, db: AsyncSession = Depends(get_db)
     return monitor
 
 
-@router.delete("/{monitor_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{monitor_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete monitor",
+    description="Delete a monitor and all its check history.",
+)
 async def delete_monitor(monitor_id: int, db: AsyncSession = Depends(get_db)):
-    """Delete a monitor and all its check history."""
     monitor = await db.get(Monitor, monitor_id)
     if not monitor:
         raise HTTPException(status_code=404, detail="Monitor not found")
