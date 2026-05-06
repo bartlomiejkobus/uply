@@ -9,6 +9,9 @@ from app.models import Monitor, Check  # noqa: F401
 from app.routers import monitors, checks, stats, dashboard
 from app.services.monitor_engine import monitor_engine
 
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -53,3 +56,11 @@ async def global_exception_handler(request: Request, exc: Exception):
 @app.get("/")
 async def root():
     return {"name": "Uply", "status": "ok"}
+
+
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+
+
+@app.get("/dashboard", include_in_schema=False)
+async def dashboard_frontend():
+    return FileResponse("app/static/index.html")

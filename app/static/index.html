@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>UPLY Dashboard</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo">UPLY</div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <h2>Śledzenie</h2>
+      <form id="addMonitorForm" class="add-form">
+        <input id="monitorUrl" type="url" placeholder="https://example.com" required />
+        <button type="submit">Dodaj</button>
+      </form>
+      <div id="targets" class="targets"></div>
+    </aside>
+
+    <section class="content">
+      <h1>Metryki</h1>
+      <div class="selected-target">
+        <span id="selectedUrl">Wybierz śledzenie z lewej strony</span>
+        <span id="liveDot" class="status-dot unknown"></span>
+      </div>
+
+      <div class="recent-status">
+        Aktualny status: <span id="statusText">unknown</span>
+      </div>
+
+      <div class="cards">
+        <article class="metric-card">
+          <span>Ostatni ping</span>
+          <strong id="recentPing">-</strong>
+        </article>
+        <article class="metric-card">
+          <span>Średni ping</span>
+          <strong id="avgPing">-</strong>
+        </article>
+        <article class="metric-card">
+          <span>Ostatnia odpowiedź</span>
+          <strong id="recentResponse">-</strong>
+        </article>
+        <article class="metric-card">
+          <span>Dostępność 24h</span>
+          <strong id="uptime24">-</strong>
+        </article>
+      </div>
+
+      <section class="chart-box">
+        <div class="section-title">Uptime chart</div>
+        <canvas id="uptimeChart" height="74"></canvas>
+      </section>
+
+      <section class="history-box">
+        <div class="section-title">Historia</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Adres</th>
+                <th>Ping</th>
+                <th>HTTP Response</th>
+                <th>Status</th>
+                <th>Data i godzina</th>
+              </tr>
+            </thead>
+            <tbody id="historyRows">
+              <tr><td colspan="5">Brak danych</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
